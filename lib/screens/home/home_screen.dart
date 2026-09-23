@@ -23,18 +23,21 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final List<Customer> customers = [
     Customer(
+      id: 'customer_001',
       name: 'Juan Dela Cruz',
       tableNumber: '1',
       orderNumber: '#001',
       orderType: OrderType.dineIn,
     ),
     Customer(
+      id: 'customer_002',
       name: 'Maria Santos',
       tableNumber: '2',
       orderNumber: '#002',
       orderType: OrderType.dineIn,
     ),
     Customer(
+      id: 'customer_003',
       name: 'Pedro Reyes',
       tableNumber: '3',
       orderNumber: '#003',
@@ -42,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
       status: OrderStatus.cooking,
     ),
     Customer(
+      id: 'customer_004',
       name: 'Ana Garcia',
       orderNumber: '#004',
       orderType: OrderType.takeOut,
@@ -120,6 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void moveCustomer(Customer customer, OrderStatus newStatus) {
+    final customerId = customer.id;
     final oldStatus = customer.status;
 
     setState(() {
@@ -130,12 +135,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${customer.name} moved to ${getStatusTitle(newStatus)}'),
+        content: const Text('Status updated'),
         action: SnackBarAction(
           label: 'UNDO',
           onPressed: () {
+            final index = customers.indexWhere(
+              (customer) => customer.id == customerId,
+            );
+
+            if (index == -1) {
+              return;
+            }
+
             setState(() {
-              customer.status = oldStatus;
+              customers[index].status = oldStatus;
             });
           },
         ),
@@ -214,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final previousStatus = getPreviousStatus(customer.status);
 
     return Dismissible(
-      key: ValueKey('${customer.orderNumber}_${customer.name}'),
+      key: ValueKey(customer.id),
       direction: DismissDirection.horizontal,
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {

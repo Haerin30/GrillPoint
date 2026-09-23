@@ -61,6 +61,7 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
     }
 
     final updatedCustomer = Customer(
+      id: widget.customer.id,
       name: name,
       tableNumber: selectedOrderType == OrderType.dineIn ? table : null,
       orderNumber: order,

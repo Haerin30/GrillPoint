@@ -44,6 +44,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     }
 
     final customer = Customer(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
       name: name,
       tableNumber: selectedOrderType == OrderType.dineIn ? table : null,
       orderNumber: order,
