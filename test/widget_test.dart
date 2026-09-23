@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:grillpoint/app/app.dart';
 import 'package:grillpoint/models/product.dart';
-import 'package:grillpoint/screens/products/product_menu_screen.dart';
 import 'package:grillpoint/services/product_service.dart';
 
 void main() {
@@ -22,7 +21,7 @@ void main() {
 
   group('Product management', () {
     testWidgets(
-      'added product remains available after navigating away and returning',
+      'added product remains after leaving Products and opening it again',
       (tester) async {
         final productService = ProductService.instance;
 
@@ -30,95 +29,146 @@ void main() {
           (product) => product.name == 'Test BBQ',
         );
 
-        await tester.pumpWidget(const MaterialApp(home: ProductMenuScreen()));
-        await tester.pumpAndSettle();
+        try {
+          await tester.pumpWidget(const GrillPointApp());
+          await tester.pumpAndSettle();
 
-        // Open Add Product.
-        await tester.tap(find.byType(FloatingActionButton));
-        await tester.pumpAndSettle();
+          // Open the navigation drawer.
+          await tester.tap(find.byIcon(Icons.menu));
+          await tester.pumpAndSettle();
 
-        expect(find.text('Add Product'), findsWidgets);
+          // Open Products.
+          await tester.tap(find.text('Products'));
+          await tester.pumpAndSettle();
 
-        final textFields = find.byType(TextField);
+          expect(find.text('Products'), findsOneWidget);
 
-        await tester.enterText(textFields.at(0), 'Test BBQ');
+          // Add a product through the UI.
+          await tester.tap(find.byType(FloatingActionButton));
+          await tester.pumpAndSettle();
 
-        await tester.enterText(textFields.at(1), '99');
+          final textFields = find.byType(TextField);
 
-        await tester.tap(find.widgetWithText(ElevatedButton, 'Add Product'));
-        await tester.pumpAndSettle();
+          await tester.enterText(textFields.at(0), 'Test BBQ');
 
-        expect(find.text('Test BBQ'), findsOneWidget);
+          await tester.enterText(textFields.at(1), '99');
 
-        // Navigate away from the Products screen.
-        final productContext = tester.element(find.byType(ProductMenuScreen));
+          await tester.tap(find.widgetWithText(ElevatedButton, 'Add Product'));
+          await tester.pumpAndSettle();
 
-        Navigator.of(productContext).push(
-          MaterialPageRoute(
-            builder: (context) =>
-                const Scaffold(body: Center(child: Text('Other Screen'))),
-          ),
-        );
+          expect(find.text('Test BBQ'), findsOneWidget);
 
-        await tester.pumpAndSettle();
+          // Return to the Dashboard.
+          await tester.tap(find.byType(BackButton));
+          await tester.pumpAndSettle();
 
-        expect(find.text('Other Screen'), findsOneWidget);
+          expect(find.text('GrillPoint'), findsOneWidget);
 
-        // Navigate back to Products.
-        Navigator.of(productContext).pop();
-        await tester.pumpAndSettle();
+          // Open the drawer again.
+          await tester.tap(find.byIcon(Icons.menu));
+          await tester.pumpAndSettle();
 
-        expect(find.text('Products'), findsOneWidget);
-        expect(find.text('Test BBQ'), findsOneWidget);
+          // Open Products again.
+          await tester.tap(find.text('Products'));
+          await tester.pumpAndSettle();
 
-        // Clean up shared test data.
-        productService.products.removeWhere(
-          (product) => product.name == 'Test BBQ',
-        );
+          // A new ProductMenuScreen instance should still show the product.
+          expect(find.text('Products'), findsOneWidget);
+          expect(find.text('Test BBQ'), findsOneWidget);
+        } finally {
+          // Prevent this test from affecting other tests.
+          productService.products.removeWhere(
+            (product) => product.name == 'Test BBQ',
+          );
+        }
       },
     );
   });
 
   group('Order status and Undo', () {
-    testWidgets('swiping an order changes its status and Undo restores it', (
-      tester,
-    ) async {
-      await tester.pumpWidget(const GrillPointApp());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'swiping an order moves it to Cooking and Undo restores Queue',
+      (tester) async {
+        await tester.pumpWidget(const GrillPointApp());
+        await tester.pumpAndSettle();
 
-      // Juan starts in Queue.
-      expect(find.text('Juan Dela Cruz'), findsOneWidget);
+        final queueSection = find.byKey(const ValueKey('queue-section'));
 
-      final customerCard = find.ancestor(
-        of: find.text('Juan Dela Cruz'),
-        matching: find.byType(Card),
-      );
+        final cookingSection = find.byKey(const ValueKey('cooking-section'));
 
-      expect(customerCard, findsOneWidget);
+        // Juan initially belongs to Queue.
+        expect(
+          find.descendant(
+            of: queueSection,
+            matching: find.text('Juan Dela Cruz'),
+          ),
+          findsOneWidget,
+        );
 
-      // Swipe Juan from Queue -> Cooking.
-      await tester.drag(customerCard, const Offset(500, 0));
-      await tester.pumpAndSettle();
+        expect(
+          find.descendant(
+            of: cookingSection,
+            matching: find.text('Juan Dela Cruz'),
+          ),
+          findsNothing,
+        );
 
-      // The Undo action should appear.
-      expect(find.text('UNDO'), findsOneWidget);
+        // Find Juan's card inside Queue.
+        final juanCard = find.ancestor(
+          of: find.descendant(
+            of: queueSection,
+            matching: find.text('Juan Dela Cruz'),
+          ),
+          matching: find.byType(Card),
+        );
 
-      // Undo the status change.
-      await tester.tap(find.text('UNDO'));
-      await tester.pumpAndSettle();
+        expect(juanCard, findsOneWidget);
 
-      // Juan should still be displayed after returning to Queue.
-      expect(find.text('Juan Dela Cruz'), findsOneWidget);
+        // Swipe Juan from Queue -> Cooking.
+        await tester.drag(juanCard, const Offset(500, 0));
+        await tester.pumpAndSettle();
 
-      // Scroll back to the top and verify Queue is still present.
-      await tester.scrollUntilVisible(
-        find.text('QUEUE'),
-        500,
-        scrollable: find.byType(Scrollable).first,
-      );
+        // Juan must now be in Cooking.
+        expect(
+          find.descendant(
+            of: queueSection,
+            matching: find.text('Juan Dela Cruz'),
+          ),
+          findsNothing,
+        );
 
-      expect(find.text('QUEUE'), findsOneWidget);
-    });
+        expect(
+          find.descendant(
+            of: cookingSection,
+            matching: find.text('Juan Dela Cruz'),
+          ),
+          findsOneWidget,
+        );
+
+        // Undo the status change.
+        expect(find.text('UNDO'), findsOneWidget);
+
+        await tester.tap(find.text('UNDO'));
+        await tester.pumpAndSettle();
+
+        // Juan must be restored to Queue.
+        expect(
+          find.descendant(
+            of: queueSection,
+            matching: find.text('Juan Dela Cruz'),
+          ),
+          findsOneWidget,
+        );
+
+        expect(
+          find.descendant(
+            of: cookingSection,
+            matching: find.text('Juan Dela Cruz'),
+          ),
+          findsNothing,
+        );
+      },
+    );
   });
 
   test('ProductService contains sample products', () {

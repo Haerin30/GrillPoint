@@ -359,6 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final expanded = isExpanded(status);
 
     return Column(
+      key: ValueKey('${status.name}-section'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
