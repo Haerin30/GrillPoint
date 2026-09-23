@@ -14,6 +14,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   final tableController = TextEditingController();
   final orderController = TextEditingController();
 
+  OrderType selectedOrderType = OrderType.dineIn;
+
   @override
   void dispose() {
     nameController.dispose();
@@ -27,17 +29,25 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     final table = tableController.text.trim();
     final order = orderController.text.trim();
 
-    if (name.isEmpty || table.isEmpty || order.isEmpty) {
+    if (name.isEmpty || order.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        const SnackBar(content: Text('Please fill in all required fields')),
+      );
+      return;
+    }
+
+    if (selectedOrderType == OrderType.dineIn && table.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a table number')),
       );
       return;
     }
 
     final customer = Customer(
       name: name,
-      tableNumber: table,
+      tableNumber: selectedOrderType == OrderType.dineIn ? table : null,
       orderNumber: order,
+      orderType: selectedOrderType,
     );
 
     Navigator.pop(context, customer);
@@ -58,15 +68,52 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
+
             const SizedBox(height: 16),
-            TextField(
-              controller: tableController,
+
+            DropdownButtonFormField<OrderType>(
+              initialValue: selectedOrderType,
               decoration: const InputDecoration(
-                labelText: 'Table Number',
+                labelText: 'Order Type',
                 border: OutlineInputBorder(),
               ),
+              items: const [
+                DropdownMenuItem(
+                  value: OrderType.dineIn,
+                  child: Text('Dine In'),
+                ),
+                DropdownMenuItem(
+                  value: OrderType.takeOut,
+                  child: Text('Take Out'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value == null) return;
+
+                setState(() {
+                  selectedOrderType = value;
+
+                  if (value == OrderType.takeOut) {
+                    tableController.clear();
+                  }
+                });
+              },
             ),
+
             const SizedBox(height: 16),
+
+            if (selectedOrderType == OrderType.dineIn)
+              TextField(
+                controller: tableController,
+                decoration: const InputDecoration(
+                  labelText: 'Table Number',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+
+            if (selectedOrderType == OrderType.dineIn)
+              const SizedBox(height: 16),
+
             TextField(
               controller: orderController,
               decoration: const InputDecoration(
@@ -74,7 +121,9 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
+
             const SizedBox(height: 24),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

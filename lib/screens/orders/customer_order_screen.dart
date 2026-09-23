@@ -22,7 +22,9 @@ class CustomerOrderScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              customer.tableNumber,
+              customer.orderType == OrderType.dineIn
+                  ? 'Dine In • Table ${customer.tableNumber}'
+                  : 'Take Out',
               style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 32),
