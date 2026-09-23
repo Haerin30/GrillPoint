@@ -18,12 +18,7 @@ class ProductService {
       price: 90,
       category: ProductCategory.bbq,
     ),
-    Product(
-      id: '3',
-      name: 'Isaw',
-      price: 50,
-      category: ProductCategory.bbq,
-    ),
+    Product(id: '3', name: 'Isaw', price: 50, category: ProductCategory.bbq),
     Product(
       id: '4',
       name: 'Pork Liempo',
@@ -36,12 +31,7 @@ class ProductService {
       price: 35,
       category: ProductCategory.rice,
     ),
-    Product(
-      id: '6',
-      name: 'Coke',
-      price: 30,
-      category: ProductCategory.drinks,
-    ),
+    Product(id: '6', name: 'Coke', price: 30, category: ProductCategory.drinks),
     Product(
       id: '7',
       name: 'Sprite',

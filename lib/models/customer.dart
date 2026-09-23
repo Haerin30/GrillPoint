@@ -1,13 +1,6 @@
-enum OrderStatus {
-  queue,
-  cooking,
-  done,
-}
+enum OrderStatus { queue, cooking, done }
 
-enum OrderType {
-  dineIn,
-  takeOut,
-}
+enum OrderType { dineIn, takeOut }
 
 class Customer {
   final String id;

@@ -11,7 +11,7 @@ class ProductMenuScreen extends StatefulWidget {
 }
 
 class _ProductMenuScreenState extends State<ProductMenuScreen> {
-    List<Product> get products => ProductService.instance.products;
+  List<Product> get products => ProductService.instance.products;
 
   String getCategoryName(ProductCategory category) {
     switch (category) {

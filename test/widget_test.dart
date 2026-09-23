@@ -60,10 +60,7 @@ void main() {
       final products = ProductService.instance.products;
 
       expect(products, isNotEmpty);
-      expect(
-        products.any((product) => product.name == 'Chicken BBQ'),
-        isTrue,
-      );
+      expect(products.any((product) => product.name == 'Chicken BBQ'), isTrue);
     });
 
     test('products have valid prices and categories', () {
