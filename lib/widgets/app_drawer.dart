@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../screens/kiosk/kiosk_screen.dart';
 import '../screens/products/product_menu_screen.dart';
 import '../screens/settings/settings_screen.dart';
 
@@ -71,6 +72,18 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Sales'),
             onTap: () {
               Navigator.pop(context);
+            },
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.touch_app),
+            title: const Text('Kiosk Preview'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const KioskScreen()),
+              );
             },
           ),
 
