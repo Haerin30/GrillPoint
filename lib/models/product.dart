@@ -1,4 +1,12 @@
-enum ProductCategory { bbq, drinks, sides, rice }
+enum ProductCategory {
+  bbq('BBQ'),
+  drinks('Drinks'),
+  sides('Sides'),
+  rice('Rice');
+
+  const ProductCategory(this.label);
+  final String label;
+}
 
 class Product {
   final String id;

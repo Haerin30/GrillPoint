@@ -1,7 +1,6 @@
-enum OrderStatus { queue, cooking, done }
+import 'order.dart';
 
-enum OrderType { dineIn, takeOut }
-
+/// Staff-entered walk-in record; not yet a persisted order with line items.
 class Customer {
   final String id;
 

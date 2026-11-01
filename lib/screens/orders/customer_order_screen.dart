@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/customer.dart';
+import '../../models/order.dart';
 
 class CustomerOrderScreen extends StatelessWidget {
   final Customer customer;

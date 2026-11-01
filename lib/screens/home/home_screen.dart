@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/customer.dart';
+import '../../models/order.dart';
 import '../../widgets/app_drawer.dart';
 import '../customers/add_customer_screen.dart';
 import '../customers/edit_customer_screen.dart';
@@ -55,72 +56,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   OrderStatus? selectedStatus;
 
-  bool queueExpanded = true;
-  bool cookingExpanded = true;
-  bool doneExpanded = true;
+  final Set<OrderStatus> _collapsedStatuses = {};
 
   List<Customer> getCustomersByStatus(OrderStatus status) {
     return customers.where((customer) => customer.status == status).toList();
   }
 
-  String getStatusTitle(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.queue:
-        return 'QUEUE';
-      case OrderStatus.cooking:
-        return 'COOKING';
-      case OrderStatus.done:
-        return 'DONE';
-    }
-  }
-
-  bool isExpanded(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.queue:
-        return queueExpanded;
-      case OrderStatus.cooking:
-        return cookingExpanded;
-      case OrderStatus.done:
-        return doneExpanded;
-    }
-  }
-
   void toggleSection(OrderStatus status) {
     setState(() {
-      switch (status) {
-        case OrderStatus.queue:
-          queueExpanded = !queueExpanded;
-          break;
-        case OrderStatus.cooking:
-          cookingExpanded = !cookingExpanded;
-          break;
-        case OrderStatus.done:
-          doneExpanded = !doneExpanded;
-          break;
+      if (!_collapsedStatuses.add(status)) {
+        _collapsedStatuses.remove(status);
       }
     });
-  }
-
-  OrderStatus? getNextStatus(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.queue:
-        return OrderStatus.cooking;
-      case OrderStatus.cooking:
-        return OrderStatus.done;
-      case OrderStatus.done:
-        return null;
-    }
-  }
-
-  OrderStatus? getPreviousStatus(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.queue:
-        return null;
-      case OrderStatus.cooking:
-        return OrderStatus.queue;
-      case OrderStatus.done:
-        return OrderStatus.cooking;
-    }
   }
 
   void moveCustomer(Customer customer, OrderStatus newStatus) {
@@ -158,13 +105,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void handleSwipe(Customer customer, DismissDirection direction) {
     if (direction == DismissDirection.startToEnd) {
-      final nextStatus = getNextStatus(customer.status);
+      final nextStatus = customer.status.next;
 
       if (nextStatus != null) {
         moveCustomer(customer, nextStatus);
       }
     } else if (direction == DismissDirection.endToStart) {
-      final previousStatus = getPreviousStatus(customer.status);
+      final previousStatus = customer.status.previous;
 
       if (previousStatus != null) {
         moveCustomer(customer, previousStatus);
@@ -178,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(builder: (context) => const AddCustomerScreen()),
     );
 
-    if (newCustomer != null) {
+    if (mounted && newCustomer != null) {
       setState(() {
         customers.add(newCustomer);
       });
@@ -193,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
-    if (updatedCustomer != null) {
+    if (mounted && updatedCustomer != null) {
       setState(() {
         final index = customers.indexOf(customer);
 
@@ -223,27 +170,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget buildCustomerCard(Customer customer) {
-    final nextStatus = getNextStatus(customer.status);
-    final previousStatus = getPreviousStatus(customer.status);
+    final nextStatus = customer.status.next;
+    final previousStatus = customer.status.previous;
 
     return Dismissible(
       key: ValueKey(customer.id),
       direction: DismissDirection.horizontal,
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
-          if (nextStatus == null) {
-            return false;
-          }
-        }
-
-        if (direction == DismissDirection.endToStart) {
-          if (previousStatus == null) {
-            return false;
-          }
-        }
-
-        return true;
-      },
+      confirmDismiss: (direction) async =>
+          direction == DismissDirection.startToEnd
+          ? nextStatus != null
+          : previousStatus != null,
       onDismissed: (direction) {
         handleSwipe(customer, direction);
       },
@@ -260,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Icon(Icons.arrow_forward, color: Colors.white),
             const SizedBox(width: 8),
             Text(
-              nextStatus == null ? '' : 'Move to ${getStatusTitle(nextStatus)}',
+              nextStatus == null ? '' : 'Move to ${nextStatus.label}',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -281,9 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Text(
-              previousStatus == null
-                  ? ''
-                  : 'Move to ${getStatusTitle(previousStatus)}',
+              previousStatus == null ? '' : 'Move to ${previousStatus.label}',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -356,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final statusCustomers = getCustomersByStatus(status);
-    final expanded = isExpanded(status);
+    final expanded = !_collapsedStatuses.contains(status);
 
     return Column(
       key: ValueKey('${status.name}-section'),
@@ -370,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               children: [
                 Text(
-                  getStatusTitle(status),
+                  status.label,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -447,9 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
           const SizedBox(height: 24),
-          buildStatusSection(OrderStatus.queue),
-          buildStatusSection(OrderStatus.cooking),
-          buildStatusSection(OrderStatus.done),
+          ...OrderStatus.values.map(buildStatusSection),
         ],
       ),
       floatingActionButton: FloatingActionButton(

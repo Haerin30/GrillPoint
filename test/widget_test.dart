@@ -20,6 +20,31 @@ void main() {
   });
 
   group('Product management', () {
+    testWidgets('non-finite prices are rejected without adding a product', (
+      tester,
+    ) async {
+      final products = ProductService.instance.products;
+      final originalCount = products.length;
+      await tester.pumpWidget(const GrillPointApp());
+      await tester.tap(find.byIcon(Icons.menu));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Products'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(0), 'Invalid price');
+      for (final price in ['Infinity', 'NaN']) {
+        await tester.enterText(find.byType(TextField).at(1), price);
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Add Product'));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Please enter a valid name and price'),
+          findsOneWidget,
+        );
+        expect(products.length, originalCount);
+      }
+    });
+
     testWidgets(
       'added product remains after leaving Products and opening it again',
       (tester) async {

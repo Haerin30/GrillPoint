@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../formatters/currency.dart';
 import '../../models/product.dart';
 import '../../services/product_service.dart';
 
@@ -13,27 +14,14 @@ class ProductMenuScreen extends StatefulWidget {
 class _ProductMenuScreenState extends State<ProductMenuScreen> {
   List<Product> get products => ProductService.instance.products;
 
-  String getCategoryName(ProductCategory category) {
-    switch (category) {
-      case ProductCategory.bbq:
-        return 'BBQ';
-      case ProductCategory.drinks:
-        return 'Drinks';
-      case ProductCategory.sides:
-        return 'Sides';
-      case ProductCategory.rice:
-        return 'Rice';
-    }
-  }
-
   void addProduct() {
-    showDialog(
+    showDialog<Product>(
       context: context,
       builder: (context) {
         return const _ProductDialog();
       },
     ).then((product) {
-      if (product != null && product is Product) {
+      if (mounted && product != null) {
         setState(() {
           products.add(product);
         });
@@ -42,13 +30,13 @@ class _ProductMenuScreenState extends State<ProductMenuScreen> {
   }
 
   void editProduct(Product product) {
-    showDialog(
+    showDialog<Product>(
       context: context,
       builder: (context) {
         return _ProductDialog(product: product);
       },
     ).then((updatedProduct) {
-      if (updatedProduct != null && updatedProduct is Product) {
+      if (mounted && updatedProduct != null) {
         setState(() {
           product.name = updatedProduct.name;
           product.price = updatedProduct.price;
@@ -84,7 +72,7 @@ class _ProductMenuScreenState extends State<ProductMenuScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
-          '${getCategoryName(product.category)} • ₱${product.price.toStringAsFixed(2)}',
+          '${product.category.label} • ${formatPesos(product.price)}',
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -129,7 +117,7 @@ class _ProductMenuScreenState extends State<ProductMenuScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          getCategoryName(category),
+          category.label,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
@@ -203,7 +191,7 @@ class _ProductDialogState extends State<_ProductDialog> {
     final name = nameController.text.trim();
     final price = double.tryParse(priceController.text.trim());
 
-    if (name.isEmpty || price == null || price <= 0) {
+    if (name.isEmpty || price == null || !price.isFinite || price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid name and price')),
       );
@@ -221,19 +209,6 @@ class _ProductDialogState extends State<_ProductDialog> {
     );
 
     Navigator.pop(context, product);
-  }
-
-  String getCategoryName(ProductCategory category) {
-    switch (category) {
-      case ProductCategory.bbq:
-        return 'BBQ';
-      case ProductCategory.drinks:
-        return 'Drinks';
-      case ProductCategory.sides:
-        return 'Sides';
-      case ProductCategory.rice:
-        return 'Rice';
-    }
   }
 
   @override
@@ -275,7 +250,7 @@ class _ProductDialogState extends State<_ProductDialog> {
               items: ProductCategory.values.map((category) {
                 return DropdownMenuItem(
                   value: category,
-                  child: Text(getCategoryName(category)),
+                  child: Text(category.label),
                 );
               }).toList(),
               onChanged: (value) {
